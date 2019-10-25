@@ -10,8 +10,9 @@ const FaceTracking = require('FaceTracking');
 
 
 var mode = 0;
-
 var totalBlinks = 0;
+
+//words
 
 const values = [
   ['Yes','No','Pain','Doctor','Breathless'],
@@ -24,6 +25,7 @@ const values = [
 ]
 
 
+var words = Scene.root.find('words');
 var A = Scene.root.find('A');
 var B = Scene.root.find('B');
 var C = Scene.root.find('C');
@@ -161,6 +163,7 @@ function checkBlinks() {
   {
 	  
 	  keyboard.hidden = true;
+	  words.hidden = true;
 	  
   }else{
 	  
