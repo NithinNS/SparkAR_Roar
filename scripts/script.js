@@ -235,9 +235,14 @@ eyesClosed.monitor().subscribe(function(event) {
 				
 			  var output  = values[y.pinLastValue()][x.pinLastValue()];
 			  Patches.setStringValue('value', output); 
-			  			    
-			  playbackController.reset();
-			  playbackController.setPlaying(true);
+			  	
+				if(mode==1)
+				{
+					playbackController.reset();
+					playbackController.setPlaying(true);
+				}					
+
+			  
 			   
 				if(y.pinLastValue()>3)
 				{
