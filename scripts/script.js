@@ -9,11 +9,18 @@ const FaceGestures = require('FaceGestures');
 const FaceTracking = require('FaceTracking');
 
 
+//Home
 var mode = 0;
 var totalBlinks = 0;
+var home = Scene.root.find('home');
+var currentMenu = 0;
+var menuBg0 = Scene.root.find('menuBg0');
+var menuBg1 = Scene.root.find('menuBg1');
+var menuBg2 = Scene.root.find('menuBg2');
+var menuBgs = [menuBg0,menuBg1,menuBg2];
+var first = true;
 
 //words
-
 const values = [
   ['Yes','No','Pain','Doctor','Breathless'],
   ['Thirsty','Scratch','Move','Toilet','Sleepy'],
@@ -99,6 +106,10 @@ const characters = [
 ]
 
 var typedValue = "";
+
+
+//Quiz
+var quiz = Scene.root.find('quiz');
  
 function hideAllKeyboardRows()
 {
@@ -140,7 +151,6 @@ function keyboardPreviousRow()
 
 function flashCursorBegin() {
   
- 
   if(!flashCursor) {
 	  
 	typedValue = typedValue + "|";
@@ -160,14 +170,12 @@ function flashCursorBegin() {
 function checkBlinks() {
    
   if(totalBlinks>2)
-  {
-	  
+  {	  
 	  keyboard.hidden = true;
 	  words.hidden = true;
-	  
-  }else{
-	  
-	  
+	  home.hidden = false;	  
+	  quiz.hidden = false;	
+	  mode = 0;
   }
   
   totalBlinks = 0;
@@ -221,8 +229,7 @@ eyesClosed.monitor().subscribe(function(event) {
 		  t2 = timeValue.pinLastValue();	  
 		  Patches.setScalarValue('timeElapsed', (t2-t1)); 
 		  Patches.setScalarValue('blinkTime', (t2-t1)); 
-		  
-		  
+		   
 			if((t2-t1)>0.8)
 			{
 				
@@ -243,30 +250,54 @@ eyesClosed.monitor().subscribe(function(event) {
 				}
 			
 			  			  
-			  if(keysRowBgPosition==9 || keysRowBgPosition-keysOffset==9)
+			  if(mode==0)
 			  {
-				  if(keysOffset==0)
+				 switchUI();
+				  
+			  }else if(mode==2)
+			  {
+				  if(keysRowBgPosition==9 || keysRowBgPosition-keysOffset==9)
 				  {
-					keysAlphabet.hidden = true;
-					keysNumeric.hidden = false;  
-					keysOffset = 10;
-					
+					  if(keysOffset==0)
+					  {
+						keysAlphabet.hidden = true;
+						keysNumeric.hidden = false;  
+						keysOffset = 10;
+						
+					  }else
+					  {
+						keysAlphabet.hidden = false;
+						keysNumeric.hidden = true;  
+						keysOffset = 0;
+					  }
+					  
+					  
 				  }else
 				  {
-					keysAlphabet.hidden = false;
-					keysNumeric.hidden = true;  
-					keysOffset = 0;
+					  typedValue = typedValue.replace('|','');
+					  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][1];			  
+					  Patches.setStringValue('typedValue',typedValue);
 				  }
-				  
-				  
-			  }else
-			  {
-				  typedValue = typedValue.replace('|','');
-				  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][1];			  
-				  Patches.setStringValue('typedValue',typedValue);
 			  }
 			   
-			} 	
+			}else 	
+			{
+				if(mode==0)
+				{
+					for (var i = 0; i <menuBgs.length; i++) {
+						menuBgs[i].hidden = true;
+					}
+					
+					currentMenu++;
+					
+					if(currentMenu==3)
+					{
+						currentMenu = 0;
+					}
+					
+					menuBgs[currentMenu].hidden = false;
+				}
+			}
 	}
   
   
@@ -286,17 +317,20 @@ leftEyeClosed.monitor().subscribe(function(event) {
 		  
 		  Diagnostics.log('duration'+(leftEyeClosedT2-leftEyeClosedT1));
 		  
-		  if((leftEyeClosedT2-leftEyeClosedT1)<0.5)
+		  if(mode==2)
 		  {
-			keyboardPreviousRow();
-			
-		  }else 
-		  {
-			  typedValue = typedValue.replace('|','');
-			  
-			  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][0];
-			  
-			  Patches.setStringValue('typedValue',typedValue);
+			  if((leftEyeClosedT2-leftEyeClosedT1)<0.5)
+			  {
+				keyboardPreviousRow();
+				
+			  }else 
+			  {
+				  typedValue = typedValue.replace('|','');
+				  
+				  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][0];
+				  
+				  Patches.setStringValue('typedValue',typedValue);
+			  }
 		  }
 
 	}
@@ -315,31 +349,33 @@ rightEyeClosed.monitor().subscribe(function(event) {
 		  rightEyeClosedT2 = timeValue.pinLastValue();	  
 		  Patches.setScalarValue('rightEyeCloseDuration', (rightEyeClosedT2-rightEyeClosedT1)); 		   
 		  
-		  
-		  
-		  if((rightEyeClosedT2-rightEyeClosedT1)<0.5)
-		  {
-			keyboardNextRow();
-			
-		  }else
-		  {
-			  typedValue = typedValue.replace('|','');
-			  
-			  if(keysRowBgPosition==8 || keysRowBgPosition-keysOffset==8)
+		  if(mode==2)
+		  {		  
+			  if((rightEyeClosedT2-rightEyeClosedT1)<0.5)
 			  {
-				  typedValue = typedValue.slice(0, -1);
-				  typedValue = typedValue;
-				  
-			  }else if(keysRowBgPosition==9 || keysRowBgPosition-keysOffset==9)
-			  {
-				  typedValue = "";				  
-				  
+				keyboardNextRow();
+				
 			  }else
 			  {
-				  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][2];
+				  typedValue = typedValue.replace('|','');
+				  
+				  if(keysRowBgPosition==8 || keysRowBgPosition-keysOffset==8)
+				  {
+					  typedValue = typedValue.slice(0, -1);
+					  typedValue = typedValue;
+					  
+				  }else if(keysRowBgPosition==9 || keysRowBgPosition-keysOffset==9)
+				  {
+					  typedValue = "";				  
+					  
+				  }else
+				  {
+					  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][2];
+				  }
+				   
+				  Patches.setStringValue('typedValue',typedValue);
+				  
 			  }
-			   
-			  Patches.setStringValue('typedValue',typedValue);
 			  
 		  }
 		  
@@ -347,6 +383,35 @@ rightEyeClosed.monitor().subscribe(function(event) {
   
 });  
 
+
+function switchUI()
+{
+	if(!first)
+	{
+		keyboard.hidden = true;
+		words.hidden = true;
+		home.hidden = true;	 
+		quiz.hidden = true;	 
+		
+		mode = currentMenu+1;
+		
+		switch(currentMenu)
+		{
+			case 0 : words.hidden = false;		
+			break;
+			
+			case 1 : keyboard.hidden = false;
+			break;
+			
+			case 2 : quiz.hidden = false;
+			break;
+				
+		}
+	}
+	
+	first = false;
+	
+}
 
 FaceGestures.onBlink(face).subscribe(function() {
 
