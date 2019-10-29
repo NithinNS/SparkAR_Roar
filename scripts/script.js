@@ -1,3 +1,5 @@
+
+const Persistence = require('Persistence');
 const Diagnostics = require('Diagnostics');
 const Scene = require('Scene');
 const Patches = require('Patches');
@@ -11,7 +13,6 @@ const FaceTracking = require('FaceTracking');
 
 //Home
 var mode = 0;
-var totalBlinks = 0;
 var home = Scene.root.find('home');
 var currentMenu = 0;
 var menuBg0 = Scene.root.find('menuBg0');
@@ -41,7 +42,7 @@ var E = Scene.root.find('E');
 
 var positionValue = Scene.root.find('positionValue');
 
-var t1=0,t2;
+var t1=0,t2,eyesClosedStatus=false;
 var leftEyeClosedT1=0,leftEyeClosedT2;
 var rightEyeClosedT1=0,rightEyeClosedT2;
 
@@ -110,6 +111,31 @@ var typedValue = "";
 
 //Quiz
 var quiz = Scene.root.find('quiz');
+
+var question = Scene.root.find('question');
+var score = Scene.root.find('score');
+var correct = Scene.root.find('correct');
+var wrong = Scene.root.find('wrong');
+
+var choice0 = Scene.root.find('choice0');
+var choice1 = Scene.root.find('choice1');
+var choice2 = Scene.root.find('choice2');
+
+var choiceBg0 = Scene.root.find('choiceBg0');
+var choiceBg1 = Scene.root.find('choiceBg1');
+var choiceBg2 = Scene.root.find('choiceBg2');
+
+const userScope = Persistence.userScope;
+var data = { question: 0, score: 0 };
+
+var currentQuestion = 0;
+var currentScore = 0;
+
+var choiceBgs = [choiceBg0,choiceBg1,choiceBg2]; 
+var choiceBgColors = ['choice0Color','choice1Color','choice2Color']; 
+
+var currentChoice = 0;
+var confirmedChoice = -1;
  
 function hideAllKeyboardRows()
 {
@@ -167,23 +193,24 @@ function flashCursorBegin() {
    
 } 
 
-function checkBlinks() {
+function checkEyeClosedDuration() {
    
-  if(totalBlinks>2)
-  {	  
+  var currentTimeValue = timeValue.pinLastValue();
+   
+  if(mode!=0 && eyesClosedStatus && (currentTimeValue - t1)>=2.5) 
+  {
+	  playbackController.reset();
+	  playbackController.setPlaying(true);
 	  keyboard.hidden = true;
 	  words.hidden = true;
 	  home.hidden = false;	  
-	  quiz.hidden = false;	
+	  quiz.hidden = true;	
 	  mode = 0;
-  }
-  
-  totalBlinks = 0;
-  
+  }   
 } 
 
 const intervalTimer = Time.setInterval(flashCursorBegin, timeInMilliseconds);
-const blinkTimer = Time.setInterval(checkBlinks, 800);
+const blinkTimer = Time.setInterval(checkEyeClosedDuration, 500);
 
 const face = FaceTracking.face(0);
 
@@ -221,69 +248,91 @@ eyesClosed.monitor().subscribe(function(event) {
 
 	if(event.newValue)
 	{
+		  eyesClosedStatus = true;
 		  t1 = timeValue.pinLastValue();
 		  Patches.setScalarValue('blinkTime', 2); 
 		  
 	}else{
-		  
+		
+		  eyesClosedStatus = false;
 		  t2 = timeValue.pinLastValue();	  
 		  Patches.setScalarValue('timeElapsed', (t2-t1)); 
 		  Patches.setScalarValue('blinkTime', (t2-t1)); 
 		   
 			if((t2-t1)>0.8)
 			{
-				
-			  var output  = values[y.pinLastValue()][x.pinLastValue()];
-			  Patches.setStringValue('value', output); 
-			  	
-				if(mode==1)
-				{
-					playbackController.reset();
-					playbackController.setPlaying(true);
-				}					
+				if((t2-t1)<2.5)
+				{					
+				  var output  = values[y.pinLastValue()][x.pinLastValue()];
+				  Patches.setStringValue('value', output); 
+					
+					if(mode==1)
+					{
+						playbackController.reset();
+						playbackController.setPlaying(true);
+					}					
 
-			  
-			   
-				if(y.pinLastValue()>3)
-				{
-					var exp = y.pinLastValue();
-					Patches.setScalarValue('currentFrame',(exp-4)*5+ x.pinLastValue());  
-					Patches.setBooleanValue('smileyVisible', true); 	    			  
-				}else
-				{
-					Patches.setBooleanValue('smileyVisible', false); 
-				}
-			
-			  			  
-			  if(mode==0)
-			  {
-				 switchUI();
 				  
-			  }else if(mode==2)
-			  {
-				  if(keysRowBgPosition==9 || keysRowBgPosition-keysOffset==9)
+				   
+					if(y.pinLastValue()>3)
+					{
+						var exp = y.pinLastValue();
+						Patches.setScalarValue('currentFrame',(exp-4)*5+ x.pinLastValue());  
+						Patches.setBooleanValue('smileyVisible', true); 	    			  
+					}else
+					{
+						Patches.setBooleanValue('smileyVisible', false); 
+					}
+				
+							  
+				  if(mode==0)
 				  {
-					  if(keysOffset==0)
+					 switchUI();
+					  
+				  }else if(mode==2)
+				  {
+					  if(keysRowBgPosition==9 || keysRowBgPosition-keysOffset==9)
 					  {
-						keysAlphabet.hidden = true;
-						keysNumeric.hidden = false;  
-						keysOffset = 10;
-						
+						  if(keysOffset==0)
+						  {
+							keysAlphabet.hidden = true;
+							keysNumeric.hidden = false;  
+							keysOffset = 10;
+							
+						  }else
+						  {
+							keysAlphabet.hidden = false;
+							keysNumeric.hidden = true;  
+							keysOffset = 0;
+						  }
+						  
+						  
 					  }else
 					  {
-						keysAlphabet.hidden = false;
-						keysNumeric.hidden = true;  
-						keysOffset = 0;
+						  typedValue = typedValue.replace('|','');
+						  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][1];			  
+						  Patches.setStringValue('typedValue',typedValue);
 					  }
 					  
-					  
-				  }else
-				  {
-					  typedValue = typedValue.replace('|','');
-					  typedValue = typedValue+characters[keysOffset+keysRowBgPosition][1];			  
-					  Patches.setStringValue('typedValue',typedValue);
+				  }else if(mode==3)
+				  { 
+					if(confirmedChoice==-1)
+					{
+						confirmedChoice = currentChoice;
+						checkChoice();
+						
+					}else
+					{
+						confirmedChoice=-1;
+						resetQuizUi();
+						displayNextQuestion();					
+						 
+					}
+					
+						
 				  }
-			  }
+				  
+				}
 			   
 			}else 	
 			{
@@ -301,6 +350,21 @@ eyesClosed.monitor().subscribe(function(event) {
 					}
 					
 					menuBgs[currentMenu].hidden = false;
+					
+				}else if(mode==3 && confirmedChoice==-1)
+				{
+					for (var i = 0; i <choiceBgs.length; i++) {
+						choiceBgs[i].hidden = true;
+					}
+					
+					currentChoice++;
+					
+					if(currentChoice==3)
+					{
+						currentChoice = 0;
+					}
+					
+					choiceBgs[currentChoice].hidden = false;
 				}
 			}
 	}
@@ -409,6 +473,8 @@ function switchUI()
 			break;
 			
 			case 2 : quiz.hidden = false;
+			resetQuizUi();
+			displayNextQuestion();			
 			break;
 				
 		}
@@ -420,8 +486,157 @@ function switchUI()
 
 FaceGestures.onBlink(face).subscribe(function() {
 
-	totalBlinks++;
+	
 	 
 });
   
+
+function resetQuizUi()
+{
+	Patches.setScalarValue('choice0Color', 0); 
+	Patches.setScalarValue('choice1Color', 0); 
+	Patches.setScalarValue('choice2Color', 0); 
+	
+	correct.hidden = true;
+	wrong.hidden = true;
+	
+	choiceBg0.hidden = false;
+	choiceBg1.hidden = true;
+	choiceBg2.hidden = true;	
+}
+
+function displayNextQuestion()
+{ 
+	userScope.get('data').then(function(result) {
+ 
+		currentQuestion =  result.question;
+		currentScore =  result.score;
+	  
+		score.text = "Score : "+currentScore;		 
+		question.text = (currentQuestion+1)+") "+allQuestions[currentQuestion].q;
+		choice0.text = allQuestions[currentQuestion].c[0];
+		choice1.text = allQuestions[currentQuestion].c[1];
+		choice2.text = allQuestions[currentQuestion].c[2];
+	 
+	}).catch(function(error) { 
+
+		Diagnostics.log('Failed to retrieve data, ' + error);
+	 
+		currentQuestion =  0;
+		currentScore =  0;
+	  
+		score.text = "Score : "+currentScore;		 
+		question.text = (currentQuestion+1)+") "+allQuestions[currentQuestion].q;
+		choice0.text = allQuestions[currentQuestion].c[0];
+		choice1.text = allQuestions[currentQuestion].c[1];
+		choice2.text = allQuestions[currentQuestion].c[2];
+
+	});
+	
+}
+
+function checkChoice()
+{
+	for (var i = 0; i <choiceBgColors.length; i++) 
+	{
+		Patches.setScalarValue(choiceBgColors[i], 1); 			
+	}
+		
+	Patches.setScalarValue(choiceBgColors[allQuestions[currentQuestion].a], 2); 
+		
+	if(allQuestions[currentQuestion].a==confirmedChoice)
+	{	  
+		correct.hidden = false;
+		wrong.hidden = true;
+		currentScore++;
+		score.text = "Score : "+currentScore;		 
+		//play sound
+		
+	}else{
+		
+		correct.hidden = true;
+		wrong.hidden = false;		
+		
+		//play sound
+	}
+	
+	currentQuestion++;
+	saveQuizProgress();
+	
+}
+
+function saveQuizProgress()
+{
+	data.question = currentQuestion;
+	data.score = currentScore;
+	 
+	userScope.set('data',data).then(function(result) {
+		
+		Diagnostics.log("userScope saved");
+   
+  }).catch(function(error) {
   
+
+  });
+}
+
+TouchGestures.onTap(question).subscribe(function() {
+ 
+	//saveQuizProgress();
+	Diagnostics.log("userScope"+currentQuestion+" "+currentScore);
+
+});
+  
+  
+var allQuestions = [
+{
+    q: '1What is the capital city of Australia?',
+    c: ['Sydney', 'Melbourne', 'Canberra'],
+    a: 2
+},
+{
+    q: '2Who won the 2014 FIFA World Cup?',
+    c: ['Brazil', 'England', 'Germany'],
+    a: 2
+},
+{
+    q: '3What book series is authored by J.K Rowling?',
+    c: ['Game of Thrones', 'Hunger Games', 'Twilight'],
+    a: 1
+},
+{
+    q: '4At which bridge does the annual Oxford and Cambridge boat race start?',
+    c: ['Sydney', 'Melbourne', 'Canberra'],
+    a: 2
+},{
+    q: '5What book series is authored by J.K Rowling?',
+    c: ['Game of Thrones', 'Hunger Games', 'Twilight'],
+    a: 0
+},
+{
+    q: '11What is the capital city of Australia?',
+    c: ['Sydney', 'Melbourne', 'Canberra'],
+    a: 2
+},
+{
+    q: '22Who won the 2014 FIFA World Cup?',
+    c: ['Brazil', 'England', 'Germany'],
+    a: 2
+},
+{
+    q: '33What book series is authored by J.K Rowling?',
+    c: ['Game of Thrones', 'Hunger Games', 'Twilight'],
+    a: 1
+},
+{
+    q: '44At which bridge does the annual Oxford and Cambridge boat race start?',
+    c: ['Sydney', 'Melbourne', 'Canberra'],
+    a: 2
+},
+{
+    q: '55What book series is authored by J.K Rowling?',
+    c: ['Game of Thrones', 'Hunger Games', 'Twilight'],
+    a: 0
+}];
+
+
