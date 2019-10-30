@@ -5,4 +5,4 @@ A Spark AR effect created to help ALS patients communicate.
 
 * Animated Emoticons
 * Text to Speech
-* Eye Tracking Navigation
+* 
