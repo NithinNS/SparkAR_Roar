@@ -59,6 +59,18 @@ const playbackController = Audio.getPlaybackController('playbackController');
 playbackController.setPlaying(true);
 playbackController.setLooping(false);
 
+var playbackControllerCorrect  = Audio.getPlaybackController('playbackControllerCorrect');
+playbackControllerCorrect.setPlaying(true);
+playbackControllerCorrect.setLooping(false);
+
+var playbackControllerWrong = Audio.getPlaybackController('playbackControllerWrong');
+playbackControllerWrong.setPlaying(true);
+playbackControllerWrong.setLooping(false);
+
+var playbackControllerHome = Audio.getPlaybackController('playbackControllerHome');
+playbackControllerHome.setPlaying(true);
+playbackControllerHome.setLooping(false);
+
 var isAudioPlaying = false;
 
 //Keyboard
@@ -97,12 +109,12 @@ const characters = [
 ['1','2','3'],
 ['4','5','6'],
 ['7','8','9'],
-['0','+','+'],
-['+','+','+'],
-['+','+','+'],
-['+','+','+'],
-['+','+','+'],
-['+','+','del'],
+['0','?','!'],
+[',','.','@'],
+[':',';','!'],
+['(',')','$'],
+['%','^','&'],
+['*','-','del'],
 [' ','abc','clr'],
 ]
 
@@ -198,14 +210,15 @@ function checkEyeClosedDuration() {
   var currentTimeValue = timeValue.pinLastValue();
    
   if(mode!=0 && eyesClosedStatus && (currentTimeValue - t1)>=2.5) 
-  {
-	  playbackController.reset();
-	  playbackController.setPlaying(true);
+  { 
 	  keyboard.hidden = true;
 	  words.hidden = true;
 	  home.hidden = false;	  
 	  quiz.hidden = true;	
 	  mode = 0;
+	  
+	  playbackControllerHome.reset();
+	  playbackControllerHome.setPlaying(true);
   }   
 } 
 
@@ -550,14 +563,16 @@ function checkChoice()
 		wrong.hidden = true;
 		currentScore++;
 		score.text = "Score : "+currentScore;		 
-		//play sound
+		playbackControllerCorrect.reset();
+		playbackControllerCorrect.setPlaying(true);
 		
 	}else{
 		
 		correct.hidden = true;
 		wrong.hidden = false;		
 		
-		//play sound
+		playbackControllerWrong.reset();
+		playbackControllerWrong.setPlaying(true);		
 	}
 	
 	currentQuestion++;
@@ -590,18 +605,18 @@ TouchGestures.onTap(question).subscribe(function() {
   
 var allQuestions = [
 {
-    q: '1What is the capital city of Australia?',
-    c: ['Sydney', 'Melbourne', 'Canberra'],
+    q: 'What does the S stand for in the abbreviation SIM, as in SIM card? ',
+    c: ['Single', 'Secure', 'Subscriber'],
     a: 2
 },
 {
-    q: '2Who won the 2014 FIFA World Cup?',
-    c: ['Brazil', 'England', 'Germany'],
-    a: 2
+    q: 'What is the Zodiac symbol for Gemini?',
+    c: ['Twins', 'Fish', 'Scales'],
+    a: 0
 },
 {
-    q: '3What book series is authored by J.K Rowling?',
-    c: ['Game of Thrones', 'Hunger Games', 'Twilight'],
+    q: 'Which of the following card games revolves around numbers and basic math?',
+    c: ['Munchkin', 'Uno', 'Twister'],
     a: 1
 },
 {
