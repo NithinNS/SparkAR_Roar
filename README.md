@@ -1,7 +1,7 @@
 # Roar
 A Spark AR effect created to help ALS patients communicate.
 
-Effect Link : [https://www.facebook.com/fbcameraeffects/tryit/478996369351510/](https://www.facebook.com/fbcameraeffects/tryit/478996369351510/)
+Effect Link : [Try It](http://bit.ly/2PNEUGQ)
 
 ## Introduction
 Majority of ALS patients in developing countries are deprived of sophisticated means of communication due to financial reasons. Eventually, They lose their battle to ALS without ever having technology by their side.
