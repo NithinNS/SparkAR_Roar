@@ -595,12 +595,12 @@ function saveQuizProgress()
   });
 }
 
-TouchGestures.onTap(question).subscribe(function() {
+//TouchGestures.onTap(question).subscribe(function() {
  
 	//saveQuizProgress();
-	Diagnostics.log("userScope"+currentQuestion+" "+currentScore);
+	//Diagnostics.log("userScope"+currentQuestion+" "+currentScore);
 
-});
+//});
   
   
 var allQuestions = [
