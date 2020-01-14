@@ -18,7 +18,7 @@ var currentMenu = 0;
 var menuBg0 = Scene.root.find('menuBg0');
 var menuBg1 = Scene.root.find('menuBg1');
 var menuBg2 = Scene.root.find('menuBg2');
-var menuBgs = [menuBg0,menuBg1,menuBg2];
+var menuBgs = [menuBg0,menuBg1];
 var first = true;
 
 //words
@@ -357,7 +357,7 @@ eyesClosed.monitor().subscribe(function(event) {
 					
 					currentMenu++;
 					
-					if(currentMenu==3)
+					if(currentMenu==menuBgs.length)
 					{
 						currentMenu = 0;
 					}
